@@ -5,6 +5,8 @@
  * and GPL (http://www.opensource.org/licenses/gpl-license.php) licenses.
  *
  * Version 2.2.6
+ * updating  addOption
+
  * Demo: http://www.texotela.co.uk/code/jquery/select/
  *
  *
@@ -21,6 +23,25 @@
  * @example  $("#myselect").addOption("Value", "Text"); // add single value (will be selected)
  * @example  $("#myselect").addOption("Value 2", "Text 2", false); // add single value (won't be selected)
  * @example  $("#myselect").addOption({"foo":"bar","bar":"baz"}, false); // add multiple values, but don't select
+ * 
+if the first param object( json ) has value and text, then put others  key-value as attribute of option.
+
+Then options of select box can carry more data. 
+@example  $("#myselect").addOption({
+	
+	{value :'value1',
+	text:'Text1',
+	"foo":"bar1",
+	"bar":"baz1"
+	},
+	{value :'value2',
+	text:'Text2',
+	"foo":"bar2",
+	"bar":"baz2"
+	}
+	
+	
+}, false); // add multiple values, but don't select
  *
  */
 $.fn.addOption = function()
@@ -29,6 +50,77 @@ $.fn.addOption = function()
 	{
 		var option = document.createElement("option");
 		option.value = v, option.text = t;
+		// get options
+		var o = el.options;
+		// get number of options
+		var oL = o.length;
+		if(!el.cache)
+		{
+			el.cache = {};
+			// loop through existing options, adding to cache
+			for(var i = 0; i < oL; i++)
+			{
+				el.cache[o[i].value] = i;
+			}
+		}
+		if (index || index == 0)
+		{
+ 			// we're going to insert these starting  at a specific index...
+			// this has the side effect of el.cache[v] being the 
+			// correct value for the typeof check below
+			var ti = option;
+			for(var ii =index; ii <= oL; ii++)
+			{
+				var tmp = el.options[ii];
+				el.options[ii] = ti;
+				o[ii] = ti;
+				el.cache[o[ii].value] = ii;
+				ti = tmp;
+			}
+		}
+    
+		// add to cache if it isn't already
+		if(typeof el.cache[v] == "undefined") el.cache[v] = oL;
+		el.options[el.cache[v]] = option;
+		if(sO)
+		{
+			option.selected = true;
+		}
+	};
+	
+	var addByJSon = function(el, json, sO, index)
+	{
+		var option = document.createElement("option");
+		var v,t ="";
+		var returnFlag = false;
+		
+		//if there is no “value” in json， add as it is 
+		if (typeof  json['value']=='undefined'){
+			returnFlag = true;
+			var startindex= index;
+			for(var key in json){
+				add(el, key, json[key], sO, startindex);
+				startindex += 1;
+			}
+			
+
+			
+		}
+		if(returnFlag) return;
+		for(var key in jsonData){ 
+			if (key =='value'){
+				v = jsonData[key];
+				option.value = jsonData[key];
+			}else if (key =='text'){
+				option.text = jsonData[key];
+				t = jsonData[key];
+			}else{
+				
+				// set other as attribute
+				$(option).attr(key,jsonData[key]) ;
+			}
+			
+		}
 		// get options
 		var o = el.options;
 		// get number of options
@@ -108,11 +200,12 @@ $.fn.addOption = function()
 			if(this.nodeName.toLowerCase() != "select") return;
 			if(m)
 			{
-				for(var item in items)
-				{
-					add(this, item, items[item], sO, startindex);
-					startindex += 1;
-				}
+//				for(var item in items)
+//				{
+//					add(this, item, items[item], sO, startindex);
+//					startindex += 1;
+//				}
+				addByJSon(this, items, sO, startindex);
 			}
 			else
 			{
